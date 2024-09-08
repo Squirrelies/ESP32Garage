@@ -21,11 +21,12 @@ void setup()
 	attachInterruptArg(ESP32GARAGE_DOOR_REED_SWITCH_GPIO, &DebouncingCheck, (void *)&GarageDoorOpening, RISING);
 	PrintFormat(NULL, "done!\n");
 
-	// Connect to Wifi.
-	TryConnectWifi(ESP32GARAGE_WIFI_SSID, ESP32GARAGE_WIFI_PASS);
-
-	// Initialize and get network time.
-	InitializeNetworkTime(ESP32GARAGE_UTC_OFFSET, ESP32GARAGE_DST_OBSERVED, ESP32GARAGE_NTP_ADDRESS);
+	// Attempt to connect to Wifi and get network time.
+	while (!TryInitializeWifi())
+	{
+		// Add a 2500ms delay between initial wifi initialization so we're not hammering the CPU as bad.
+		delay(2500);
+	}
 
 	// Initialize Fauxmo.
 	InitializeFauxmo();
@@ -66,8 +67,38 @@ void loop()
 	}
 	else
 	{
-		// Re-connect to Wifi and re-initialize Fauxmo.
-		TryConnectWifi(ESP32GARAGE_WIFI_SSID, ESP32GARAGE_WIFI_PASS);
+		// Stop server while we reconnect.
+		PrintFormat("Fauxmo", "Stopping Fauxmo...\n");
+		fauxmo.enable(false);
+
+		// Re-connect.
+		if (TryInitializeWifi())
+		{
+			// Start the server if we succeeded in reconnecting.
+			PrintFormat("Fauxmo", "Starting Fauxmo...\n");
+			fauxmo.enable(true);
+		}
+	}
+}
+
+bool TryInitializeWifi()
+{
+	// Connect to Wifi.
+	PrintFormat("Wifi", "Connecting to Wifi... ");
+	if (TryConnectWifi(ESP32GARAGE_WIFI_SSID, ESP32GARAGE_WIFI_PASS))
+	{
+		PrintFormat(NULL, "success!\n");
+
+		// Initialize and get network time.
+		PrintFormat("Time", "Getting current time...\n");
+		InitializeNetworkTime(ESP32GARAGE_UTC_OFFSET, ESP32GARAGE_DST_OBSERVED, ESP32GARAGE_NTP_ADDRESS);
+
+		return true;
+	}
+	else
+	{
+		PrintFormat(NULL, "failed!\n");
+		return false;
 	}
 }
 

@@ -33,6 +33,9 @@ void IRAM_ATTR GarageDoorClosing();
 /// @brief Executes when the reed switch detects that the door has switched from a closed to an opening state.
 void IRAM_ATTR GarageDoorOpening();
 
+/// @brief Attempt to initialize wifi and setup network time.
+bool TryInitializeWifi();
+
 /// @brief Initialize the Fauxmo framework.
 void InitializeFauxmo();
 

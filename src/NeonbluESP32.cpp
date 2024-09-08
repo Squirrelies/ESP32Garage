@@ -6,12 +6,9 @@ void PrintFormat(const char *section, const char *format, ...)
 {
 	if (section != NULL)
 	{
-		const char *currTime = GetNetworkTimeString();
-		if (currTime)
-		{
-			printf("[%s] ", currTime);
-			free((void *)currTime);
-		}
+		std::unique_ptr<std::string> currTime;
+		if ((currTime = GetNetworkTimeString())->data() != nullptr)
+			printf("[%s] ", currTime->data());
 		printf("(%-8s) ", section);
 	}
 	va_list args;
@@ -148,22 +145,21 @@ void InitializeNetworkTime(float utcOffset, bool isDSTObserved, const char *ntpA
 	isTimeInitialized = true;
 }
 
-const char *GetNetworkTimeString()
+std::unique_ptr<std::string> GetNetworkTimeString()
 {
 	if (!isTimeInitialized)
-		return NULL;
+		return nullptr;
 
 	struct tm timeinfo;
 	if (!getLocalTime(&timeinfo))
-		return NULL;
+		return nullptr;
 
 	size_t charsWritten;
-	char buffer[20]; // YYYY-MM-dd HH:mm:ss (19 + 1)
-	if (!(charsWritten = strftime(buffer, sizeof(buffer), "%F %T", &timeinfo)))
-		return NULL;
-	char *returnValue = (char *)malloc(charsWritten + 1);
-	memset(returnValue, 0, charsWritten + 1);
-	strncpy(returnValue, buffer, charsWritten + 1);
+	std::unique_ptr<std::string> returnValue = std::make_unique<std::string>(20, '\0'); // YYYY-MM-dd HH:mm:ss (19 + 1)
+	if (!(charsWritten = strftime(returnValue->data(), returnValue->size(), "%F %T", &timeinfo)))
+		return nullptr;
+
+	returnValue->resize(charsWritten);
 	return returnValue;
 }
 

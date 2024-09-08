@@ -4,8 +4,9 @@
 // Includes
 
 #include <WiFi.h>
+#include <memory>
 #include <stdio.h>
-#include <string.h>
+#include <string>
 #include <time.h>
 
 // Forward declarations
@@ -38,8 +39,8 @@ bool TryConnectWifi(const char *wifiSSID, const char *wifiPassword, const bool r
 void InitializeNetworkTime(float utcOffset, bool isDSTObserved, const char *ntpAddress);
 
 /// @brief Retrieves the current date/time from the network time protocol formatted as YYYY-MM-dd HH\:mm:ss.
-/// @return The current date/time from the NTP server or NULL if there was a failure.
-const char *GetNetworkTimeString();
+/// @return The current date/time from the NTP server or nullptr if there was a failure.
+std::unique_ptr<std::string> GetNetworkTimeString();
 
 /// @brief Signals a GPIO pin for the given duration.
 /// @param gpioPin The GPIO pin to signal.
