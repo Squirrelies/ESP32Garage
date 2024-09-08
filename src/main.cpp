@@ -10,6 +10,24 @@ void setup()
 	delay(1000);
 	PrintSystemInfo();
 
+	// Attempt to connect to Wifi and get network time.
+	while (!TryInitializeWifi())
+	{
+		// Add a 2500ms delay between initial wifi initialization so we're not hammering the CPU as bad.
+		delay(2500);
+	}
+
+	// Initialize OTA.
+	ArduinoOTA.setPassword(ESP32GARAGE_OTA_PASS);
+	ArduinoOTA
+	    .onStart(OtaOnStartHandler)
+	    .onEnd(OtaOnEndHandler)
+	    .onProgress(OtaOnProgressHandler)
+	    .onError(OtaOnErrorHandler);
+
+	// Start OTA.
+	ArduinoOTA.begin();
+
 	// Set LED pin mode
 	pinMode(LED_BUILTIN, OUTPUT);
 
@@ -20,13 +38,6 @@ void setup()
 	attachInterruptArg(ESP32GARAGE_DOOR_REED_SWITCH_GPIO, &DebouncingCheck, (void *)&GarageDoorClosing, FALLING);
 	attachInterruptArg(ESP32GARAGE_DOOR_REED_SWITCH_GPIO, &DebouncingCheck, (void *)&GarageDoorOpening, RISING);
 	PrintFormat(NULL, "done!\n");
-
-	// Attempt to connect to Wifi and get network time.
-	while (!TryInitializeWifi())
-	{
-		// Add a 2500ms delay between initial wifi initialization so we're not hammering the CPU as bad.
-		delay(2500);
-	}
 
 	// Initialize Fauxmo.
 	InitializeFauxmo();
@@ -59,6 +70,9 @@ void loop()
 	// Handle only if we're connected to Wifi. Otherwise wait and try again next loop.
 	if (IsWifiConnected(&wifiStatus))
 	{
+		// Handle incoming OTA updates. If no events are pending, this returns immediately.
+		ArduinoOTA.handle();
+
 		// Handle incoming Fauxmo events. If no events are pending, this returns immediately.
 		fauxmo.handle();
 
@@ -67,14 +81,18 @@ void loop()
 	}
 	else
 	{
-		// Stop server while we reconnect.
+		// Stop servers while we reconnect.
+		PrintFormat("OTA", "Stopping OTA...\n");
+		ArduinoOTA.end();
 		PrintFormat("Fauxmo", "Stopping Fauxmo...\n");
 		fauxmo.enable(false);
 
 		// Re-connect.
 		if (TryInitializeWifi())
 		{
-			// Start the server if we succeeded in reconnecting.
+			// Start the servers if we succeeded in reconnecting.
+			PrintFormat("OTA", "Starting OTA...\n");
+			ArduinoOTA.begin();
 			PrintFormat("Fauxmo", "Starting Fauxmo...\n");
 			fauxmo.enable(true);
 		}
@@ -121,6 +139,45 @@ void InitializeFauxmo()
 	fauxmo.onSetState(HandleFauxmoOnSetStateEvent);
 	PrintFormat("Fauxmo", "Starting Fauxmo...\n");
 	fauxmo.enable(true);
+}
+
+void OtaOnStartHandler()
+{
+	std::string type;
+	if (ArduinoOTA.getCommand() == U_FLASH)
+		type = "sketch";
+	else // U_SPIFFS
+		type = "filesystem";
+
+	// NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+	PrintFormat("OTA", "Update starting via %s...\n", type);
+}
+
+void OtaOnEndHandler()
+{
+	PrintFormat("OTA", "Update complete. Rebooting...");
+	delay(1000);
+	ESP.restart();
+}
+
+void OtaOnProgressHandler(unsigned int progress, unsigned int total)
+{
+	PrintFormat(NULL, "Progress: %u%%\r", (progress / (total / 100)));
+}
+
+void OtaOnErrorHandler(ota_error_t error)
+{
+	PrintFormat("OTA", "Error[%u]: ", error);
+	if (error == OTA_AUTH_ERROR)
+		PrintFormat(NULL, "Auth failed.\n");
+	else if (error == OTA_BEGIN_ERROR)
+		PrintFormat(NULL, "Begin failed.\n");
+	else if (error == OTA_CONNECT_ERROR)
+		PrintFormat(NULL, "Connect failed.\n");
+	else if (error == OTA_RECEIVE_ERROR)
+		PrintFormat(NULL, "Receive failed.\n");
+	else if (error == OTA_END_ERROR)
+		PrintFormat(NULL, "End failed.\n");
 }
 
 uint8_t AddFauxmoDevice(const char *deviceName, const uint8_t pin)

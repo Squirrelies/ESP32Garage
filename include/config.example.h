@@ -16,6 +16,9 @@
 // The amount of time in milliseconds(ms) to put the GPIO pin HIGH before setting it LOW again.
 #define ESP32GARAGE_DEVICE_GPIO_SIGNAL_DURATION 200
 
+// The OTA password you'd like to use.
+#define ESP32GARAGE_OTA_PASS "Abc12345!"
+
 // Your device's name as it will appear by default in the Alexa app.
 #define ESP32GARAGE_DEVICE_1_NAME "Garage Door"
 // Your device's GPIO pin that will be signaled when an event is trigger.

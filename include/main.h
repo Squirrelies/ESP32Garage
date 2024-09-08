@@ -5,6 +5,7 @@
 
 #include "NeonbluESP32.h"
 #include "config.h"
+#include <ArduinoOTA.h>
 #include <fauxmoESP.h>
 
 // Definitions
@@ -38,6 +39,21 @@ bool TryInitializeWifi();
 
 /// @brief Initialize the Fauxmo framework.
 void InitializeFauxmo();
+
+/// @brief
+void OtaOnStartHandler();
+
+/// @brief
+void OtaOnEndHandler();
+
+/// @brief
+/// @param progress
+/// @param total
+void OtaOnProgressHandler(unsigned int progress, unsigned int total);
+
+/// @brief
+/// @param error
+void OtaOnErrorHandler(ota_error_t error);
 
 /// @brief Adds a device to the Fauxmo framework with the given name and GPIO pin.
 /// @param deviceName The name for the new device.
