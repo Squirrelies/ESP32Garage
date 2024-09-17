@@ -18,6 +18,8 @@ void setup()
 	}
 
 	// Initialize OTA.
+	ArduinoOTA.setHostname(ESP32GARAGE_OTA_HOSTNAME);
+	ArduinoOTA.setPort(ESP32GARAGE_OTA_PORT);
 	ArduinoOTA.setPassword(ESP32GARAGE_OTA_PASS);
 	ArduinoOTA
 	    .onStart(OtaOnStartHandler)
@@ -32,7 +34,7 @@ void setup()
 	pinMode(LED_BUILTIN, OUTPUT);
 
 	// Setup the reed switch and interrupts.
-	PrintFormat("Main", "Assigning pin %d for %s... ", "Garage Door Status", ESP32GARAGE_DOOR_REED_SWITCH_GPIO);
+	PrintFormat("Main", "Assigning pin %d for %s... ", ESP32GARAGE_DOOR_REED_SWITCH_GPIO, "Garage Door Status");
 	pinMode(ESP32GARAGE_DOOR_REED_SWITCH_GPIO, INPUT_PULLUP);
 	garageDoorOpen = digitalRead(ESP32GARAGE_DOOR_REED_SWITCH_GPIO) == HIGH ? ESP32GARAGE_DOOR_STATE_OPEN : ESP32GARAGE_DOOR_STATE_CLOSED;
 	attachInterruptArg(ESP32GARAGE_DOOR_REED_SWITCH_GPIO, &DebouncingCheck, (void *)&GarageDoorClosing, FALLING);
@@ -41,28 +43,6 @@ void setup()
 
 	// Initialize Fauxmo.
 	InitializeFauxmo();
-}
-
-unsigned long reedSwitchTime = 0UL;
-unsigned long lastReedSwitchTime = 0UL;
-void IRAM_ATTR DebouncingCheck(void *voidFunc)
-{
-	reedSwitchTime = millis();
-	if (reedSwitchTime - lastReedSwitchTime > ESP32GARAGE_DEVICE_GPIO_SIGNAL_DURATION)
-	{
-		lastReedSwitchTime = reedSwitchTime;
-		((voidFuncPtr)voidFunc)();
-	}
-}
-
-void IRAM_ATTR GarageDoorClosing()
-{
-	garageDoorOpen = ESP32GARAGE_DOOR_STATE_CLOSED;
-}
-
-void IRAM_ATTR GarageDoorOpening()
-{
-	garageDoorOpen = ESP32GARAGE_DOOR_STATE_OPEN;
 }
 
 void loop()
@@ -97,6 +77,28 @@ void loop()
 			fauxmo.enable(true);
 		}
 	}
+}
+
+unsigned long reedSwitchTime = 0UL;
+unsigned long lastReedSwitchTime = 0UL;
+void IRAM_ATTR DebouncingCheck(void *voidFunc)
+{
+	reedSwitchTime = millis();
+	if (reedSwitchTime - lastReedSwitchTime > ESP32GARAGE_DEVICE_GPIO_SIGNAL_DURATION)
+	{
+		lastReedSwitchTime = reedSwitchTime;
+		((voidFuncPtr)voidFunc)();
+	}
+}
+
+void IRAM_ATTR GarageDoorClosing()
+{
+	garageDoorOpen = ESP32GARAGE_DOOR_STATE_CLOSED;
+}
+
+void IRAM_ATTR GarageDoorOpening()
+{
+	garageDoorOpen = ESP32GARAGE_DOOR_STATE_OPEN;
 }
 
 bool TryInitializeWifi()

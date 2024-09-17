@@ -19,6 +19,12 @@
 // The OTA password you'd like to use.
 #define ESP32GARAGE_OTA_PASS "Abc12345!"
 
+// The OTA hostname to assign this device.
+#define ESP32GARAGE_OTA_HOSTNAME "esp32garage"
+
+// The OTA port to use.
+#define ESP32GARAGE_OTA_PORT 8632
+
 // Your device's name as it will appear by default in the Alexa app.
 #define ESP32GARAGE_DEVICE_1_NAME "Garage Door"
 // Your device's GPIO pin that will be signaled when an event is trigger.

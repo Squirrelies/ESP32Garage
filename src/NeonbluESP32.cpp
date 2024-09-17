@@ -6,9 +6,9 @@ void PrintFormat(const char *section, const char *format, ...)
 {
 	if (section != NULL)
 	{
-		std::unique_ptr<std::string> currTime;
-		if ((currTime = GetNetworkTimeString())->data() != nullptr)
-			printf("[%s] ", currTime->data());
+		std::unique_ptr<std::string> currTime = GetNetworkTimeString();
+		if (currTime.get() != nullptr)
+			printf("[%s] ", currTime.get()->c_str());
 		printf("(%-8s) ", section);
 	}
 	va_list args;
