@@ -11,6 +11,8 @@
         "Makefile": "makefile",
         "Makefile2": "makefile",
         "*.yaml": "yaml",
-        "new": "cpp"
+        "new": "cpp",
+        "string": "cpp",
+        "memory": "cpp"
     }
 }
